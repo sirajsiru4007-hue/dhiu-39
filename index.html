@@ -223,7 +223,7 @@ async function rpc(name,args,retry=true){
   if((r.status===401||r.status===403)&&REFRESH&&retry){if(await refreshTok())return rpc(name,args,false)}
   if(!r.ok)throw new Error(r.status);
   const t=await r.text();return t?JSON.parse(t):null}
-function signOutClear(){role=null;PW="";TOKEN="";REFRESH="";subEdit=null}
+function signOutClear(){role=null;PW="";TOKEN="";REFRESH="";subEdit=null;memEdit=null}
 const mem={};let curPage="home";
 function setSync(t){const e=document.getElementById("sync");if(e)e.textContent=t}
 const store={
@@ -291,7 +291,10 @@ function render(key,boxId,title){
   box.innerHTML=`<div class="top"><h2>${title}</h2><div><span class="tag">${admin?"Admin":"Member"}</span> <button class="alt" id="out-${key}">Sign out</button></div></div>
   ${admin?`<div class="form"><input id="a-${key}" placeholder="Ad. No"><input id="n-${key}" placeholder="Name"><input id="c-${key}" placeholder="Class &amp; Div"><button id="add-${key}">Add</button></div><div class="err" id="e-${key}"></div>`:""}
   <div class="wrap"><table><thead><tr><th>Ad. No</th><th>Name</th><th>Class &amp; Div</th><th>Position</th>${admin?"<th></th>":""}</tr></thead><tbody>
-  ${rows.length?rows.map((r,i)=>`<tr><td>${esc(r.ad)}</td><td>${esc(r.name)}</td><td>${esc(r.club)}</td><td>${esc((posOf[String(r.ad).trim().toLowerCase()]||["—"]).join("; "))}</td>${admin?`<td><button class="del" data-i="${i}">Remove</button></td>`:""}</tr>`).join(""):`<tr><td colspan="${admin?5:4}">No one added yet.${admin?" Add the first person above.":""}</td></tr>`}
+  ${rows.length?rows.map((r,i)=>{
+    const pos=esc((posOf[String(r.ad).trim().toLowerCase()]||["—"]).join("; "));
+    if(admin&&memEdit===i)return `<tr class="editrow"><td><input id="ea-${key}" value="${esc(r.ad)}" placeholder="Ad. No" aria-label="Ad. No"></td><td><input id="en-${key}" value="${esc(r.name)}" placeholder="Name" aria-label="Name"></td><td><input id="ec-${key}" value="${esc(r.club)}" placeholder="Class &amp; Div" aria-label="Class and Div"></td><td>${pos}</td><td><div class="act"><button class="edit" id="esave-${key}" type="button">Save</button><button class="alt" id="ecancel-${key}" type="button">Cancel</button></div><div class="err" id="ee-${key}"></div></td></tr>`;
+    return `<tr><td>${esc(r.ad)}</td><td>${esc(r.name)}</td><td>${esc(r.club)}</td><td>${pos}</td>${admin?`<td><div class="act"><button class="edit" data-i="${i}" type="button">Edit</button><button class="del" data-i="${i}">Remove</button></div></td>`:""}</tr>`}).join(""):`<tr><td colspan="${admin?5:4}">No one added yet.${admin?" Add the first person above.":""}</td></tr>`}
   </tbody></table></div>`;
   box.querySelector("#out-"+key).onclick=()=>{signOutClear();render(key,boxId,title)};
   if(admin){
@@ -300,9 +303,21 @@ function render(key,boxId,title){
       if(!ad||!n||!c){box.querySelector("#e-"+key).textContent="Fill in Ad. No, Name and Class & Div.";return}
       const l=store.get(key);l.push({ad,name:n,club:c});store.set(key,l);render(key,boxId,title);
     };
-    box.querySelectorAll(".del").forEach(b=>tapConfirm(b,()=>{const l=store.get(key);l.splice(+b.dataset.i,1);store.set(key,l);render(key,boxId,title)}));
+    box.querySelectorAll(".del").forEach(b=>tapConfirm(b,()=>{const l=store.get(key);l.splice(+b.dataset.i,1);store.set(key,l);memEdit=null;render(key,boxId,title)}));
+    box.querySelectorAll("button.edit[data-i]").forEach(b=>b.onclick=()=>{memEdit=+b.dataset.i;render(key,boxId,title)});
+    const cancel=box.querySelector("#ecancel-"+key),save=box.querySelector("#esave-"+key);
+    if(cancel)cancel.onclick=()=>{memEdit=null;render(key,boxId,title)};
+    if(save)save.onclick=()=>{
+      const err=box.querySelector("#ee-"+key),l=store.get(key);
+      if(!l[memEdit]){memEdit=null;render(key,boxId,title);return}
+      const ad=box.querySelector("#ea-"+key).value.trim(),n=box.querySelector("#en-"+key).value.trim(),c=box.querySelector("#ec-"+key).value.trim();
+      if(!ad||!n||!c){err.textContent="Fill in Ad. No, Name and Class & Div.";return}
+      l[memEdit]={...l[memEdit],ad,name:n,club:c};
+      store.set(key,l);memEdit=null;render(key,boxId,title);
+    };
   }
 }
+let memEdit=null; // index of the Members row being edited, or null
 
 function renderAny(key,boxId,title){key==="message"?renderMessage(boxId,title):key==="core"?renderCore(boxId,title):key==="gallery"?renderGallery(boxId,title):key==="sub"?renderSub(boxId,title):render(key,boxId,title)}
 
