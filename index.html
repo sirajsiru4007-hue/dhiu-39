@@ -38,6 +38,9 @@ button.on{outline:3px solid var(--hot)}
 button.del{padding:4px 10px;background:#b3261e;color:#fff}
 button.edit{padding:4px 10px;background:var(--accent);color:#fff}
 .act{display:flex;gap:6px;flex-wrap:wrap}
+.person .act{justify-content:center}
+.person.editing{padding:0 10px 12px}
+.person.editing input{margin-top:8px}
 .editrow td{background:#fff8e1}
 .editrow input{min-width:110px;padding:6px 8px}
 .err{color:#b3261e;min-height:1.4em;margin:6px 0 0}
@@ -223,7 +226,7 @@ async function rpc(name,args,retry=true){
   if((r.status===401||r.status===403)&&REFRESH&&retry){if(await refreshTok())return rpc(name,args,false)}
   if(!r.ok)throw new Error(r.status);
   const t=await r.text();return t?JSON.parse(t):null}
-function signOutClear(){role=null;PW="";TOKEN="";REFRESH="";subEdit=null;memEdit=null}
+function signOutClear(){role=null;PW="";TOKEN="";REFRESH="";subEdit=null;memEdit=null;coreEdit=null}
 const mem={};let curPage="home";
 function setSync(t){const e=document.getElementById("sync");if(e)e.textContent=t}
 const store={
@@ -321,16 +324,34 @@ let memEdit=null; // index of the Members row being edited, or null
 
 function renderAny(key,boxId,title){key==="message"?renderMessage(boxId,title):key==="core"?renderCore(boxId,title):key==="gallery"?renderGallery(boxId,title):key==="sub"?renderSub(boxId,title):render(key,boxId,title)}
 
+let coreEdit=null; // index of the Core Committee card being edited, or null
 function renderCore(boxId,title){
   const box=document.getElementById(boxId);
   if(!role){loginView("core",box,title);return}
   const rows=store.get("core"), admin=role==="ADMIN";
   box.innerHTML=`<div class="top"><h2>${title}</h2><div><span class="tag">${admin?"Admin":"Member"}</span> <button class="alt" id="out-core">Sign out</button></div></div>
   ${admin?`<div class="form"><input id="n-core" placeholder="Name"><input id="r-core" placeholder="Role (e.g. President)"><input id="i-core" type="file" accept="image/*" aria-label="Photo"><button id="add-core">Add</button></div><div class="err" id="e-core"></div>`:""}
-  <div class="people">${rows.length?rows.map((r,i)=>`<div class="person">${r.img?`<img src="${r.img}" alt="${esc(r.name)}">`:`<div class="ph">${esc(r.name.charAt(0).toUpperCase())}</div>`}<h3>${esc(r.name)}</h3><p>${esc(r.role)}</p>${admin?`<button class="del" data-i="${i}">Remove</button>`:""}</div>`).join(""):`<p>No one added yet.${admin?" Add the first person above.":""}</p>`}</div>`;
+  <div class="people">${rows.length?rows.map((r,i)=>{
+    const pic=r.img?`<img src="${r.img}" alt="${esc(r.name)}">`:`<div class="ph">${esc(r.name.charAt(0).toUpperCase())}</div>`;
+    if(admin&&coreEdit===i)return `<div class="person editing">${pic}<input id="en-core" value="${esc(r.name)}" placeholder="Name" aria-label="Name"><input id="er-core" value="${esc(r.role)}" placeholder="Role" aria-label="Role"><input id="ei-core" type="file" accept="image/*" aria-label="New photo (optional)"><div class="row act"><button class="edit" id="esave-core" type="button">Save</button><button class="alt" id="ecancel-core" type="button">Cancel</button></div><div class="err" id="ee-core"></div></div>`;
+    return `<div class="person">${pic}<h3>${esc(r.name)}</h3><p>${esc(r.role)}</p>${admin?`<div class="act"><button class="edit" data-i="${i}" type="button">Edit</button><button class="del" data-i="${i}">Remove</button></div>`:""}</div>`}).join(""):`<p>No one added yet.${admin?" Add the first person above.":""}</p>`}</div>`;
   box.querySelector("#out-core").onclick=()=>{signOutClear();renderCore(boxId,title)};
   if(!admin)return;
-  box.querySelectorAll(".del").forEach(b=>tapConfirm(b,()=>{const l=store.get("core");l.splice(+b.dataset.i,1);store.set("core",l);renderCore(boxId,title)}));
+  box.querySelectorAll(".del").forEach(b=>tapConfirm(b,()=>{const l=store.get("core");l.splice(+b.dataset.i,1);store.set("core",l);coreEdit=null;renderCore(boxId,title)}));
+  box.querySelectorAll("button.edit[data-i]").forEach(b=>b.onclick=()=>{coreEdit=+b.dataset.i;renderCore(boxId,title)});
+  {
+    const cancel=box.querySelector("#ecancel-core"),save=box.querySelector("#esave-core");
+    if(cancel)cancel.onclick=()=>{coreEdit=null;renderCore(boxId,title)};
+    if(save)save.onclick=async()=>{
+      const err=box.querySelector("#ee-core"),l=store.get("core"),cur=l[coreEdit];
+      if(!cur){coreEdit=null;renderCore(boxId,title);return}
+      const n=box.querySelector("#en-core").value.trim(),r=box.querySelector("#er-core").value.trim(),f=box.querySelector("#ei-core").files[0];
+      if(!n||!r){err.textContent="Fill in Name and Role.";return}
+      if(f){try{cur.img=await shrink(f,400)}catch(e){err.textContent="That file is not a valid image.";return}}
+      cur.name=n;cur.role=r;
+      store.set("core",l);coreEdit=null;renderCore(boxId,title);
+    };
+  }
   box.querySelector("#add-core").onclick=()=>{
     const n=box.querySelector("#n-core").value.trim(),r=box.querySelector("#r-core").value.trim(),f=box.querySelector("#i-core").files[0],err=box.querySelector("#e-core");
     if(!n||!r){err.textContent="Fill in Name and Role.";return}
