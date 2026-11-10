@@ -206,42 +206,42 @@ h3{font-size:18px;margin:22px 0 10px}
 </main>
 
 <script>
-const PASS={ADMIN:"seru@vt",MEMBERS:"members.in"};
 let role=null; // set after sign in
-const SB_URL="https://ltopqkvzkqfuvzhqhrys.supabase.co/rest/v1/", SB_KEY="sb_publishable_e6MPC5_UZT7mFG4QnG4P8w_V6T2g_Vh"; // paste your Supabase Project URL and anon key here
+const SB_URL="https://ltopqkvzkqfuvzhqhrys.supabase.co", SB_KEY="sb_publishable_e6MPC5_UZT7mFG4QnG4P8w_V6T2g_Vh";
+let PW="",TOKEN="",REFRESH="";
 const CLOUD=!!(SB_URL&&SB_KEY), SB_KEYS=["sub2","hubs","core","gallery","members","messages"];
-const SBH={apikey:SB_KEY,Authorization:"Bearer "+SB_KEY,"Content-Type":"application/json"};
+const SBH={apikey:SB_KEY,"Content-Type":"application/json"};
+async function authCall(body,grant){const r=await fetch(SB_URL+"/auth/v1/token?grant_type="+grant,{method:"POST",headers:SBH,body:JSON.stringify(body)});if(!r.ok)throw new Error(r.status);return r.json()}
+async function refreshTok(){try{const j=await authCall({refresh_token:REFRESH},"refresh_token");TOKEN=j.access_token;REFRESH=j.refresh_token;return true}catch(e){return false}}
+async function rpc(name,args,retry=true){
+  const h={...SBH};if(TOKEN)h.Authorization="Bearer "+TOKEN;
+  const r=await fetch(SB_URL+"/rest/v1/rpc/"+name,{method:"POST",headers:h,body:JSON.stringify(args)});
+  if((r.status===401||r.status===403)&&REFRESH&&retry){if(await refreshTok())return rpc(name,args,false)}
+  if(!r.ok)throw new Error(r.status);
+  const t=await r.text();return t?JSON.parse(t):null}
+function signOutClear(){role=null;PW="";TOKEN="";REFRESH=""}
 const mem={};let curPage="home";
 function setSync(t){const e=document.getElementById("sync");if(e)e.textContent=t}
 const store={
   get(k){
     if(k in mem)return JSON.parse(JSON.stringify(mem[k]));
-    try{return JSON.parse(localStorage.getItem(k))||[]}catch(e){return []}
+    return [];
   },
   set(k,v){
-    mem[k]=v;let ok=false;
-    try{localStorage.setItem(k,JSON.stringify(v));ok=true}catch(e){}
-    if(CLOUD){
-      ok=true;
-      fetch(SB_URL+"/rest/v1/kv",{method:"POST",headers:{...SBH,Prefer:"resolution=merge-duplicates"},body:JSON.stringify({key:k,value:v})})
-        .then(r=>setSync(r.ok?"Saved online for everyone.":"Could not save online. Check your connection.")).catch(()=>setSync("Could not save online. Check your connection."));
-    }
-    return ok;
+    mem[k]=v;
+    rpc("rpc_write",{p:PW,k:k,v:v}).catch(()=>alert("Could not save. Check your connection or sign in again."));
+    return true;
   }
 };
-async function syncCloud(){
-  if(!CLOUD){setSync("Saved on this device only.");return}
+async function syncCloud(rerender=true){
+  if(!role)return;
   try{
-    const r=await fetch(SB_URL+"/rest/v1/kv?select=key,value",{headers:SBH});
-    if(!r.ok)throw 0;
-    const rows=await r.json(),seen={};
-    rows.forEach(x=>{seen[x.key]=1;mem[x.key]=x.value;try{localStorage.setItem(x.key,JSON.stringify(x.value))}catch(e){}});
-    SB_KEYS.forEach(k=>{if(!seen[k]){const l=store.get(k);if(l.length)store.set(k,l)}});
-    setSync("Connected. Saved online for everyone.");
-    show(curPage);
-  }catch(e){setSync("Online storage not reachable. Showing this device's data.")}
+    const rows=await rpc("rpc_read",{p:PW}),seen={};
+    rows.forEach(x=>{seen[x.rkey]=1;mem[x.rkey]=x.rvalue});
+    SB_KEYS.forEach(k=>{if(!seen[k])mem[k]=[]});
+    if(rerender)show(curPage);
+  }catch(e){}
 }
-try{role=sessionStorage.getItem("wafdRole")}catch(e){}
 
 
 const EYE='<svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -287,7 +287,7 @@ function render(key,boxId,title){
   <div class="wrap"><table><thead><tr><th>Ad. No</th><th>Name</th><th>Class &amp; Div</th>${admin?"<th></th>":""}</tr></thead><tbody>
   ${rows.length?rows.map((r,i)=>`<tr><td>${esc(r.ad)}</td><td>${esc(r.name)}</td><td>${esc(r.club)}</td>${admin?`<td><button class="del" data-i="${i}">Remove</button></td>`:""}</tr>`).join(""):`<tr><td colspan="${admin?4:3}">No one added yet.${admin?" Add the first person above.":""}</td></tr>`}
   </tbody></table></div>`;
-  box.querySelector("#out-"+key).onclick=()=>{role=null;try{sessionStorage.removeItem("wafdRole")}catch(e){}render(key,boxId,title)};
+  box.querySelector("#out-"+key).onclick=()=>{signOutClear();render(key,boxId,title)};
   if(admin){
     box.querySelector("#add-"+key).onclick=()=>{
       const ad=box.querySelector("#a-"+key).value.trim(),n=box.querySelector("#n-"+key).value.trim(),c=box.querySelector("#c-"+key).value.trim();
@@ -307,7 +307,7 @@ function renderCore(boxId,title){
   box.innerHTML=`<div class="top"><h2>${title}</h2><div><span class="tag">${admin?"Admin":"Member"}</span> <button class="alt" id="out-core">Sign out</button></div></div>
   ${admin?`<div class="form"><input id="n-core" placeholder="Name"><input id="r-core" placeholder="Role (e.g. President)"><input id="i-core" type="file" accept="image/*" aria-label="Photo"><button id="add-core">Add</button></div><div class="err" id="e-core"></div>`:""}
   <div class="people">${rows.length?rows.map((r,i)=>`<div class="person">${r.img?`<img src="${r.img}" alt="${esc(r.name)}">`:`<div class="ph">${esc(r.name.charAt(0).toUpperCase())}</div>`}<h3>${esc(r.name)}</h3><p>${esc(r.role)}</p>${admin?`<button class="del" data-i="${i}">Remove</button>`:""}</div>`).join(""):`<p>No one added yet.${admin?" Add the first person above.":""}</p>`}</div>`;
-  box.querySelector("#out-core").onclick=()=>{role=null;try{sessionStorage.removeItem("wafdRole")}catch(e){}renderCore(boxId,title)};
+  box.querySelector("#out-core").onclick=()=>{signOutClear();renderCore(boxId,title)};
   if(!admin)return;
   box.querySelectorAll(".del").forEach(b=>tapConfirm(b,()=>{const l=store.get("core");l.splice(+b.dataset.i,1);store.set("core",l);renderCore(boxId,title)}));
   box.querySelector("#add-core").onclick=()=>{
@@ -332,7 +332,7 @@ function renderGallery(boxId,title){
   box.innerHTML=`<div class="top"><h2>${title}</h2><div><span class="tag">${admin?"Admin":"Member"}</span> <button class="alt" id="out-gal">Sign out</button></div></div>
   ${admin?`<div class="form"><input id="f-gal" type="file" accept="image/*" multiple aria-label="Photos"><button id="add-gal">Add photos</button></div><div class="err" id="e-gal"></div>`:""}
   <div class="shots">${rows.length?rows.map((r,i)=>`<div class="shot"><img src="${r}" alt="Gallery photo ${i+1}" loading="lazy">${admin?`<button class="del" data-i="${i}">Remove</button>`:""}</div>`).join(""):`<p>No photos yet.${admin?" Add the first photos above.":""}</p>`}</div>`;
-  box.querySelector("#out-gal").onclick=()=>{role=null;try{sessionStorage.removeItem("wafdRole")}catch(e){}renderGallery(boxId,title)};
+  box.querySelector("#out-gal").onclick=()=>{signOutClear();renderGallery(boxId,title)};
   if(!admin)return;
   box.querySelectorAll(".del").forEach(b=>tapConfirm(b,()=>{const l=store.get("gallery");l.splice(+b.dataset.i,1);store.set("gallery",l);renderGallery(boxId,title)}));
   box.querySelector("#add-gal").onclick=async()=>{
@@ -382,7 +382,7 @@ function renderSub(boxId,title){
   ${admin?`<div class="form"><select id="h-sub" aria-label="Hub">${hubs.map(h=>`<option>${esc(h)}</option>`).join("")}</select><select id="p-sub" aria-label="Position"><option>CHAIRMAN</option><option>CONVENER</option><option>MEMBER</option></select><input id="c-sub" list="clubs-sub" placeholder="Club (for members)"><datalist id="clubs-sub">${clubList.map(n=>`<option value="${esc(n)}">`).join("")}</datalist><input id="a-sub" placeholder="Ad. No"><input id="n-sub" placeholder="Name"><button id="add-sub">Add</button></div><div class="err" id="e-sub"></div>
   <div class="hubadd"><input id="nh-sub" placeholder="New hub name"><button class="alt" id="addhub-sub">Add hub</button></div>`:""}
   ${hubHtml}`;
-  box.querySelector("#out-sub").onclick=()=>{role=null;try{sessionStorage.removeItem("wafdRole")}catch(e){}renderSub(boxId,title)};
+  box.querySelector("#out-sub").onclick=()=>{signOutClear();renderSub(boxId,title)};
   if(!admin)return;
   box.querySelectorAll(".del").forEach(b=>tapConfirm(b,()=>{const l=store.get("sub2");l.splice(+b.dataset.i,1);store.set("sub2",l);renderSub(boxId,title)}));
   box.querySelector("#addhub-sub").onclick=()=>{
@@ -411,11 +411,7 @@ function renderSub(boxId,title){
   };
 }
 
-async function appendShared(k,item){
-  let l=store.get(k);
-  if(CLOUD){try{const r=await fetch(SB_URL+"/rest/v1/kv?key=eq."+k+"&select=value",{headers:SBH});if(r.ok){const j=await r.json();if(j[0])l=j[0].value}}catch(e){}}
-  l.push(item);return store.set(k,l);
-}
+async function appendShared(k,item){try{await rpc("rpc_send",{p:PW,item:item});await syncCloud(false);return true}catch(e){return false}}
 let msgTab="reach";
 function renderMessage(boxId,title){
   const box=document.getElementById(boxId);
@@ -434,7 +430,7 @@ function renderMessage(boxId,title){
     body=`<p class="small2">Your message goes to the admin only.</p>`+compose(true)+(fromAdmin.length?`<h3>Messages from admin</h3>`+list(fromAdmin,false,""):"");
   }
   box.innerHTML=`<div class="top"><h2>Message</h2><div><span class="tag">${admin?"Admin":"Member"}</span> <button class="alt" id="ref-msg">Refresh</button> <button class="alt" id="out-msg">Sign out</button></div></div>`+body;
-  box.querySelector("#out-msg").onclick=()=>{role=null;try{sessionStorage.removeItem("wafdRole")}catch(e){}renderMessage(boxId,title)};
+  box.querySelector("#out-msg").onclick=()=>{signOutClear();renderMessage(boxId,title)};
   box.querySelector("#ref-msg").onclick=()=>syncCloud();
   box.querySelectorAll("[data-tab]").forEach(t=>t.onclick=()=>{msgTab=t.dataset.tab;renderMessage(boxId,title)});
   box.querySelectorAll(".del").forEach(b=>tapConfirm(b,()=>{const l=store.get("messages");l.splice(+b.dataset.i,1);store.set("messages",l);renderMessage(boxId,title)}));
@@ -455,14 +451,28 @@ function loginView(key,box,title){
   box.innerHTML=`<div class="loginwrap"><div class="box sq glass">
   <h2 class="signin">SIGN IN</h2>
   <div class="row"><button class="alt on" data-r="MEMBERS">MEMBERS</button><button class="alt" data-r="ADMIN">ADMIN</button></div>
+  <input id="em-${key}" type="email" autocomplete="off" placeholder="Admin email" aria-label="Admin email" style="display:none;margin-bottom:8px">
   <input id="pw-${key}" type="password" autocomplete="off" placeholder="Enter Password" aria-label="Password">
   <div class="err" id="le-${key}"></div><div class="row"><button id="go-${key}">Sign in</button></div></div></div>`;
   addEye(box.querySelector("#pw-"+key));
   const btns=box.querySelectorAll("[data-r]");
-  btns.forEach(b=>b.onclick=()=>{pick=b.dataset.r;btns.forEach(x=>x.classList.toggle("on",x===b))});
-  const go=()=>{
-    if(box.querySelector("#pw-"+key).value===PASS[pick]){role=pick;try{sessionStorage.setItem("wafdRole",pick)}catch(e){}renderAny(key,box.id,title)}
-    else box.querySelector("#le-"+key).textContent="Wrong password for "+pick+". Try again.";
+  btns.forEach(b=>b.onclick=()=>{pick=b.dataset.r;box.querySelector("#em-"+key).style.display=pick==="ADMIN"?"":"none";btns.forEach(x=>x.classList.toggle("on",x===b))});
+  const go=async()=>{
+    const v=box.querySelector("#pw-"+key).value,er=box.querySelector("#le-"+key);
+    er.textContent="Checking...";
+    try{
+      if(pick==="ADMIN"){
+        const em=box.querySelector("#em-"+key).value.trim();
+        const j=await authCall({email:em,password:v},"password");
+        TOKEN=j.access_token;REFRESH=j.refresh_token;
+        if(await rpc("rpc_whoami",{})===true){role="ADMIN";PW="";await syncCloud(false);renderAny(key,box.id,title)}
+        else{TOKEN="";REFRESH="";er.textContent="This account is not an admin."}
+      }else{
+        const r=await rpc("rpc_login",{p:v});
+        if(r==="MEMBERS"){role="MEMBERS";PW=v;await syncCloud(false);renderAny(key,box.id,title)}
+        else er.textContent="Wrong password for MEMBERS. Try again.";
+      }
+    }catch(e){er.textContent=(pick==="ADMIN"&&/^(400|422)$/.test(e.message))?"Wrong email or password.":"Cannot reach the server. Try again."}
   };
   box.querySelector("#go-"+key).onclick=go;
   box.querySelector("#pw-"+key).onkeydown=e=>{if(e.key==="Enter")go()};
@@ -471,12 +481,15 @@ function loginView(key,box,title){
 
 addEye(document.getElementById("gpw"));
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
-const GATE="dhiu39";
 function unlock(){document.body.classList.remove("locked");document.getElementById("gate").style.display="none"}
 try{if(sessionStorage.getItem("wafdGate")==="1")unlock()}catch(e){}
-function tryGate(){
-  if(document.getElementById("gpw").value===GATE){try{sessionStorage.setItem("wafdGate","1")}catch(e){}unlock()}
-  else document.getElementById("gerr").textContent="Wrong password. Try again."
+async function tryGate(){
+  const e=document.getElementById("gerr");e.textContent="Checking...";
+  try{
+    const r=await rpc("rpc_login",{p:document.getElementById("gpw").value});
+    if(r==="GATE"){try{sessionStorage.setItem("wafdGate","1")}catch(x){}e.textContent="";unlock()}
+    else e.textContent="Wrong password. Try again."
+  }catch(x){e.textContent="Cannot reach the server. Try again."}
 }
 document.getElementById("gbtn").onclick=tryGate;
 document.getElementById("gpw").onkeydown=e=>{if(e.key==="Enter")tryGate()};
@@ -489,7 +502,7 @@ show((location.hash||"#home").slice(1).replace(/[^a-z]/g,"")||"home");
 document.getElementById("respBtn").onclick=()=>show("message");
 (()=>{const h=document.querySelector(".mainh");let tm;h.addEventListener("touchstart",()=>{h.classList.add("glow");clearTimeout(tm);tm=setTimeout(()=>h.classList.remove("glow"),1500)},{passive:true})})();
 {const L=document.getElementById("logoHome");L.onclick=()=>show("home");L.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();show("home")}}}
-syncCloud();
+show(curPage);
 </script>
 </body>
 </html>
