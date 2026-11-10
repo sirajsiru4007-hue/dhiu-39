@@ -282,10 +282,12 @@ function render(key,boxId,title){
   const box=document.getElementById(boxId);
   if(!role){loginView(key,box,title);return}
   const rows=store.get(key), admin=role==="ADMIN";
+  const posOf={};
+  store.get("sub2").forEach(x=>{const k=String(x.ad).trim().toLowerCase();const t=x.pos==="MEMBER"?"Member, "+x.club+" ("+x.hub+")":(x.pos==="CHAIRMAN"?"Chairman, ":"Convener, ")+x.hub;(posOf[k]=posOf[k]||[]).push(t)});
   box.innerHTML=`<div class="top"><h2>${title}</h2><div><span class="tag">${admin?"Admin":"Member"}</span> <button class="alt" id="out-${key}">Sign out</button></div></div>
   ${admin?`<div class="form"><input id="a-${key}" placeholder="Ad. No"><input id="n-${key}" placeholder="Name"><input id="c-${key}" placeholder="Class &amp; Div"><button id="add-${key}">Add</button></div><div class="err" id="e-${key}"></div>`:""}
-  <div class="wrap"><table><thead><tr><th>Ad. No</th><th>Name</th><th>Class &amp; Div</th>${admin?"<th></th>":""}</tr></thead><tbody>
-  ${rows.length?rows.map((r,i)=>`<tr><td>${esc(r.ad)}</td><td>${esc(r.name)}</td><td>${esc(r.club)}</td>${admin?`<td><button class="del" data-i="${i}">Remove</button></td>`:""}</tr>`).join(""):`<tr><td colspan="${admin?4:3}">No one added yet.${admin?" Add the first person above.":""}</td></tr>`}
+  <div class="wrap"><table><thead><tr><th>Ad. No</th><th>Name</th><th>Class &amp; Div</th><th>Position</th>${admin?"<th></th>":""}</tr></thead><tbody>
+  ${rows.length?rows.map((r,i)=>`<tr><td>${esc(r.ad)}</td><td>${esc(r.name)}</td><td>${esc(r.club)}</td><td>${esc((posOf[String(r.ad).trim().toLowerCase()]||["—"]).join("; "))}</td>${admin?`<td><button class="del" data-i="${i}">Remove</button></td>`:""}</tr>`).join(""):`<tr><td colspan="${admin?5:4}">No one added yet.${admin?" Add the first person above.":""}</td></tr>`}
   </tbody></table></div>`;
   box.querySelector("#out-"+key).onclick=()=>{signOutClear();render(key,boxId,title)};
   if(admin){
