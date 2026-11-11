@@ -397,7 +397,7 @@ function shrink(f,max){return new Promise((ok,no)=>{
     ok(c.toDataURL("image/jpeg",.7))};im.src=rd.result};
   rd.readAsDataURL(f)})}
 
-const DEFAULT_HUBS=["LITERATURE HUB","INTELLECTUAL HUB","CREATIVE HUB","PUBLIC HUB"], MAX_CLUBS=4, PER_CLUB=2, HUB_MAX={"INTELLECTUAL HUB":3};
+const DEFAULT_HUBS=["LITERATURE HUB","INTELLECTUAL HUB","CREATIVE HUB","PUBLIC HUB"], MAX_CLUBS=4, PER_CLUB=1, HUB_MAX={"INTELLECTUAL HUB":3};
 function maxClubs(h){return HUB_MAX[h]||MAX_CLUBS}
 function getHubs(){const h=store.get("hubs");return h.length?h:DEFAULT_HUBS.slice()}
 let subEdit=null; // index (in "sub2") of the row being edited, or null
