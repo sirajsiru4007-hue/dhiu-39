@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <title>WAFD MATES</title>
 <style>
 :root{--bg:#eef5f1;--ink:#12302a;--mut:#54706a;--card:#ffffff;--line:#cfdcd5;--accent:#0f6b5c;--hot:#e0a100;--onacc:#ffffff}
@@ -47,6 +47,8 @@ button.edit{padding:4px 10px;background:var(--accent);color:#fff}
 .top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px}
 .tag{background:var(--hot);color:#1d2a2a;padding:2px 10px;border-radius:12px;font:700 13px "Trebuchet MS",sans-serif}
 :focus-visible{outline:3px solid var(--hot);outline-offset:2px}
+/* Use Poppins throughout the website */
+*{font-family:"Poppins",sans-serif!important}
 #gate{position:fixed;inset:0;background:#0f6b5c;display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
 #gate .box{max-width:380px;width:100%}
 #gate h1{font-size:34px;margin:0 0 6px}
@@ -290,7 +292,7 @@ function render(key,boxId,title){
   if(!role){loginView(key,box,title);return}
   const rows=store.get(key), admin=role==="ADMIN";
   const posOf={};
-  store.get("sub2").forEach(x=>{const k=String(x.ad).trim().toLowerCase();const t=x.pos==="MEMBER"?"Member, "+x.club+" ("+x.hub+")":(x.pos==="CHAIRMAN"?"Chairman, ":"Convener, ")+x.hub;(posOf[k]=posOf[k]||[]).push(t)});
+  store.get("sub2").forEach(x=>{const k=String(x.ad).trim().toLowerCase();const t=x.pos==="CLUB_CHAIRMAN"?"Chairman of "+x.club+" ("+x.hub+")":x.pos==="CLUB_CONVENER"?"Convener of "+x.club+" ("+x.hub+")":(x.pos==="CHAIRMAN"?"Chairman, ":"Convener, ")+x.hub;(posOf[k]=posOf[k]||[]).push(t)});
   box.innerHTML=`<div class="top"><h2>${title}</h2><div><span class="tag">${admin?"Admin":"Member"}</span> <button class="alt" id="out-${key}">Sign out</button></div></div>
   ${admin?`<div class="form"><input id="a-${key}" placeholder="Ad. No"><input id="n-${key}" placeholder="Name"><input id="c-${key}" placeholder="Class &amp; Div"><button id="add-${key}">Add</button></div><div class="err" id="e-${key}"></div>`:""}
   <div class="wrap"><table><thead><tr><th>Ad. No</th><th>Name</th><th>Class &amp; Div</th><th>Position</th>${admin?"<th></th>":""}</tr></thead><tbody>
@@ -400,39 +402,71 @@ function shrink(f,max){return new Promise((ok,no)=>{
 const DEFAULT_HUBS=["LITERATURE HUB","INTELLECTUAL HUB","CREATIVE HUB","PUBLIC HUB"], MAX_CLUBS=4, PER_CLUB=2, HUB_MAX={"INTELLECTUAL HUB":3};
 function maxClubs(h){return HUB_MAX[h]||MAX_CLUBS}
 function getHubs(){const h=store.get("hubs");return h.length?h:DEFAULT_HUBS.slice()}
+function isClubRole(pos){return pos==="CLUB_CHAIRMAN"||pos==="CLUB_CONVENER"}
 let subEdit=null; // index (in "sub2") of the row being edited, or null
 function renderSub(boxId,title){
   const box=document.getElementById(boxId);
   if(!role){loginView("sub",box,title);return}
-  const rows=store.get("sub2"), admin=role==="ADMIN", hubs=getHubs();
+  let rows=store.get("sub2");
+  const admin=role==="ADMIN", hubs=getHubs();
+
+  // Convert old MEMBER entries: first person in each club becomes Chairman,
+  // second person becomes Convener. Existing names and admission numbers remain unchanged.
+  let migrated=false;
+  const oldClubCounts={};
+  rows.forEach(r=>{
+    if(r.pos==="MEMBER"){
+      const key=String(r.hub)+"::"+String(r.club||"").toLowerCase();
+      const n=oldClubCounts[key]||0;
+      r.pos=n===0?"CLUB_CHAIRMAN":"CLUB_CONVENER";
+      oldClubCounts[key]=n+1;
+      migrated=true;
+    }
+  });
+  if(migrated)store.set("sub2",rows);
+
   const hubHtml=hubs.map(hub=>{
     const mine=rows.map((r,i)=>({...r,i})).filter(r=>r.hub===hub);
     const line=(r,label,club)=>{
       if(admin&&subEdit===r.i){
-        return `<tr class="editrow"><td><span class="pos">${label}</span></td><td>${r.pos==="MEMBER"?`<input id="ec-sub" value="${esc(r.club||"")}" placeholder="Club" aria-label="Club">`:""}</td><td><input id="ea-sub" value="${esc(r.ad)}" placeholder="Ad. No" aria-label="Ad. No"></td><td><input id="en-sub" value="${esc(r.name)}" placeholder="Name" aria-label="Name"></td><td><div class="act"><button class="edit" id="esave-sub" type="button">Save</button><button class="alt" id="ecancel-sub" type="button">Cancel</button></div><div class="err" id="ee-sub"></div></td></tr>`;
+        return `<tr class="editrow"><td><span class="pos">${label}</span></td><td>${isClubRole(r.pos)?`<input id="ec-sub" value="${esc(r.club||"")}" placeholder="Club" aria-label="Club">`:""}</td><td><input id="ea-sub" value="${esc(r.ad)}" placeholder="Ad. No" aria-label="Ad. No"></td><td><input id="en-sub" value="${esc(r.name)}" placeholder="Name" aria-label="Name"></td><td><div class="act"><button class="edit" id="esave-sub" type="button">Save</button><button class="alt" id="ecancel-sub" type="button">Cancel</button></div><div class="err" id="ee-sub"></div></td></tr>`;
       }
       return `<tr><td><span class="pos">${label}</span></td><td>${esc(club||"")}</td><td>${esc(r.ad)}</td><td>${esc(r.name)}</td>${admin?`<td><div class="act"><button class="edit" data-i="${r.i}" type="button">Edit</button><button class="del" data-i="${r.i}">Remove</button></div></td>`:""}</tr>`;
     };
     const vac=(label)=>`<tr class="vac"><td><span class="pos">${label}</span></td><td></td><td colspan="${admin?3:2}">Vacant</td></tr>`;
     let body="";
-    ["CHAIRMAN","CONVENER"].forEach(p=>{const l=mine.filter(r=>r.pos===p);body+=l.length?l.map(r=>line(r,p+" OF THE HUB","")).join(""):vac(p+" OF THE HUB")});
-    const clubs=[...new Set(mine.filter(r=>r.pos==="MEMBER").map(r=>r.club))];
-    clubs.forEach(c=>{
-      const ms=mine.filter(r=>r.pos==="MEMBER"&&r.club===c);
-      body+=`<tr class="clubrow"><td colspan="${admin?5:4}">${esc(c)}</td></tr>`;
-      body+=ms.map(r=>line(r,"MEMBER",c)).join("");
-      for(let n=ms.length;n<PER_CLUB;n++)body+=vac("MEMBER");
+    ["CHAIRMAN","CONVENER"].forEach(p=>{
+      const l=mine.filter(r=>r.pos===p);
+      body+=l.length?l.map(r=>line(r,p+" OF THE HUB","")).join(""):vac(p+" OF THE HUB");
     });
-    return `<div class="hub"><h3>${esc(hub)} <span class="tag">${clubs.length} of ${maxClubs(hub)} clubs</span></h3><div class="wrap"><table><thead><tr><th>Position</th><th>Club</th><th>Ad. No</th><th>Name</th>${admin?"<th></th>":""}</tr></thead><tbody>${body}</tbody></table></div></div>`;
+    const clubs=[...new Set(mine.filter(r=>isClubRole(r.pos)).map(r=>r.club).filter(Boolean))];
+    clubs.forEach(c=>{
+      const clubRows=mine.filter(r=>isClubRole(r.pos)&&String(r.club).toLowerCase()===String(c).toLowerCase());
+      body+=`<tr class="clubrow"><td colspan="${admin?5:4}">${esc(c)}</td></tr>`;
+      ["CLUB_CHAIRMAN","CLUB_CONVENER"].forEach((p,i)=>{
+        const r=clubRows.find(x=>x.pos===p);
+        const label=i===0?"CHAIRMAN OF THE CLUB":"CONVENER OF THE CLUB";
+        body+=r?line(r,label,c):vac(label);
+      });
+    });
+    return `<div class="hub"><h3>${esc(hub)} <span class="tag">${clubs.length} of ${maxClubs(hub)} clubs</span> ${admin?`<button class="del hub-delete" data-hub="${esc(hub)}" type="button">Remove Hub</button>`:""}</h3><div class="wrap"><table><thead><tr><th>Position</th><th>Club</th><th>Ad. No</th><th>Name</th>${admin?"<th></th>":""}</tr></thead><tbody>${body}</tbody></table></div></div>`;
   }).join("");
-  const clubList=[...new Set(rows.filter(r=>r.pos==="MEMBER").map(r=>r.club))];
+  const clubList=[...new Set(rows.filter(r=>isClubRole(r.pos)).map(r=>r.club).filter(Boolean))];
   box.innerHTML=`<div class="top"><h2>${title}</h2><div><span class="tag">${admin?"Admin":"Member"}</span> <button class="alt" id="out-sub">Sign out</button></div></div>
-  ${admin?`<div class="form"><select id="h-sub" aria-label="Hub">${hubs.map(h=>`<option>${esc(h)}</option>`).join("")}</select><select id="p-sub" aria-label="Position"><option>CHAIRMAN</option><option>CONVENER</option><option>MEMBER</option></select><input id="c-sub" list="clubs-sub" placeholder="Club (for members)"><datalist id="clubs-sub">${clubList.map(n=>`<option value="${esc(n)}">`).join("")}</datalist><input id="a-sub" placeholder="Ad. No"><input id="n-sub" placeholder="Name"><button id="add-sub">Add</button></div><div class="err" id="e-sub"></div>
+  ${admin?`<div class="form"><select id="h-sub" aria-label="Hub">${hubs.map(h=>`<option>${esc(h)}</option>`).join("")}</select><select id="p-sub" aria-label="Position"><option value="CHAIRMAN">CHAIRMAN OF THE HUB</option><option value="CONVENER">CONVENER OF THE HUB</option><option value="CLUB_CHAIRMAN">CHAIRMAN OF THE CLUB</option><option value="CLUB_CONVENER">CONVENER OF THE CLUB</option></select><input id="c-sub" list="clubs-sub" placeholder="Club name (for club positions)"><datalist id="clubs-sub">${clubList.map(n=>`<option value="${esc(n)}">`).join("")}</datalist><input id="a-sub" placeholder="Ad. No"><input id="n-sub" placeholder="Name"><button id="add-sub">Add</button></div><div class="err" id="e-sub"></div>
   <div class="hubadd"><input id="nh-sub" placeholder="New hub name"><button class="alt" id="addhub-sub">Add hub</button></div>`:""}
   ${hubHtml}`;
   box.querySelector("#out-sub").onclick=()=>{signOutClear();renderSub(boxId,title)};
   if(!admin)return;
-  box.querySelectorAll(".del").forEach(b=>tapConfirm(b,()=>{const l=store.get("sub2");l.splice(+b.dataset.i,1);store.set("sub2",l);subEdit=null;renderSub(boxId,title)}));
+  box.querySelectorAll(".del:not(.hub-delete)").forEach(b=>tapConfirm(b,()=>{const l=store.get("sub2");l.splice(+b.dataset.i,1);store.set("sub2",l);subEdit=null;renderSub(boxId,title)}));
+  box.querySelectorAll(".hub-delete").forEach(b=>tapConfirm(b,()=>{
+    const hubName=b.dataset.hub;
+    if(getHubs().length<=1){alert("At least one hub must remain.");return}
+    store.set("hubs",getHubs().filter(h=>h!==hubName));
+    store.set("sub2",store.get("sub2").filter(r=>r.hub!==hubName));
+    subEdit=null;
+    renderSub(boxId,title);
+  }));
   box.querySelectorAll("button.edit[data-i]").forEach(b=>b.onclick=()=>{subEdit=+b.dataset.i;renderSub(boxId,title)});
   if(subEdit!==null){
     const cancel=box.querySelector("#ecancel-sub"),save=box.querySelector("#esave-sub");
@@ -442,12 +476,12 @@ function renderSub(boxId,title){
       if(!cur){subEdit=null;renderSub(boxId,title);return}
       const ad=box.querySelector("#ea-sub").value.trim(),name=box.querySelector("#en-sub").value.trim(),cInp=box.querySelector("#ec-sub"),club=cInp?cInp.value.trim():"";
       if(!ad||!name){err.textContent="Fill in Ad. No and Name.";return}
-      if(cur.pos==="MEMBER"){
+      if(isClubRole(cur.pos)){
         if(!club){err.textContent="Type the club name.";return}
-        const others=l.filter((r,i)=>i!==subEdit&&r.hub===cur.hub&&r.pos==="MEMBER");
+        const others=l.filter((r,i)=>i!==subEdit&&r.hub===cur.hub&&isClubRole(r.pos));
         const clubsOther=[...new Set(others.map(r=>r.club))];
-        const same=others.filter(r=>r.club.toLowerCase()===club.toLowerCase());
-        if(same.length>=PER_CLUB){err.textContent=`${club} already has ${PER_CLUB} members.`;return}
+        const same=others.filter(r=>String(r.club).toLowerCase()===club.toLowerCase());
+        if(same.some(r=>r.pos===cur.pos)){err.textContent=`${club} already has a ${cur.pos==="CLUB_CHAIRMAN"?"Chairman":"Convener"}.`;return}
         if(!same.length&&clubsOther.length>=maxClubs(cur.hub)){err.textContent=`${cur.hub} already has ${maxClubs(cur.hub)} clubs.`;return}
         cur.club=same.length?same[0].club:club;
       }
@@ -466,13 +500,13 @@ function renderSub(boxId,title){
     const hub=q("h"),pos=q("p"),club=q("c"),ad=q("a"),name=q("n");
     if(!ad||!name){err.textContent="Fill in Ad. No and Name.";return}
     const l=store.get("sub2"),inHub=l.filter(r=>r.hub===hub);
-    if(pos==="MEMBER"){
-      if(!club){err.textContent="Type the club name for a member.";return}
-      const clubs=[...new Set(inHub.filter(r=>r.pos==="MEMBER").map(r=>r.club))];
-      const same=inHub.filter(r=>r.pos==="MEMBER"&&r.club.toLowerCase()===club.toLowerCase());
-      if(same.length>=PER_CLUB){err.textContent=`${club} already has ${PER_CLUB} members. Remove one first.`;return}
-      if(!same.length&&clubs.length>=maxClubs(hub)){err.textContent=`${hub} already has ${maxClubs(hub)} clubs. Remove a club's members first.`;return}
-      l.push({hub,pos,club:same.length?same[0].club:club,ad,name});
+    if(isClubRole(pos)){
+      if(!club){err.textContent="Type the club name.";return}
+      const clubRows=inHub.filter(r=>isClubRole(r.pos)&&String(r.club).toLowerCase()===club.toLowerCase());
+      const clubs=[...new Set(inHub.filter(r=>isClubRole(r.pos)).map(r=>r.club))];
+      if(clubRows.some(r=>r.pos===pos)){err.textContent=`${club} already has a ${pos==="CLUB_CHAIRMAN"?"Chairman":"Convener"}.`;return}
+      if(!clubRows.length&&clubs.length>=maxClubs(hub)){err.textContent=`${hub} already has ${maxClubs(hub)} clubs. Remove a club's people first.`;return}
+      l.push({hub,pos,club:clubRows.length?clubRows[0].club:club,ad,name});
     }else{
       if(inHub.some(r=>r.pos===pos)){err.textContent=`${hub} already has a ${pos}. Remove them first.`;return}
       l.push({hub,pos,club:"",ad,name});
