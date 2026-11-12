@@ -291,13 +291,39 @@ function render(key,boxId,title){
   const box=document.getElementById(boxId);
   if(!role){loginView(key,box,title);return}
   const rows=store.get(key), admin=role==="ADMIN";
+
+  // Build each member's position from BOTH Sub-Committee and Core Committee.
+  // Club/board roles show only the club or board name. Hub chairman/convener
+  // roles keep their hub title. Core Committee roles are matched by name
+  // because existing Core Committee records do not contain admission numbers.
   const posOf={};
-  store.get("sub2").forEach(x=>{const k=String(x.ad).trim().toLowerCase();const t=x.pos==="CLUB_CHAIRMAN"?"Chairman of "+x.club+" ("+x.hub+")":x.pos==="CLUB_CONVENER"?"Convener of "+x.club+" ("+x.hub+")":x.pos==="CLUB_MEMBER"?"Member of "+x.club+" ("+x.hub+")":(x.pos==="CHAIRMAN"?"Chairman, ":"Convener, ")+x.hub;(posOf[k]=posOf[k]||[]).push(t)});
+  store.get("sub2").forEach(x=>{
+    const k=String(x.ad||"").trim().toLowerCase();
+    if(!k)return;
+    let label="";
+    if(isClubRole(x.pos)){
+      label=String(x.club||"").trim();
+    }else if(x.pos==="CHAIRMAN"){
+      label="Chairman of "+String(x.hub||"").trim();
+    }else if(x.pos==="CONVENER"){
+      label="Convener of "+String(x.hub||"").trim();
+    }
+    if(label)(posOf[k]=posOf[k]||[]).push(label);
+  });
+  const corePositions={};
+  store.get("core").forEach(x=>{
+    const k=String(x.name||"").trim().toLowerCase();
+    const label=String(x.role||"").trim();
+    if(k&&label)(corePositions[k]=corePositions[k]||[]).push(label);
+  });
   box.innerHTML=`<div class="top"><h2>${title}</h2><div><span class="tag">${admin?"Admin":"Member"}</span> <button class="alt" id="out-${key}">Sign out</button></div></div>
   ${admin?`<div class="form"><input id="a-${key}" placeholder="Ad. No"><input id="n-${key}" placeholder="Name"><input id="c-${key}" placeholder="Class &amp; Div"><button id="add-${key}">Add</button></div><div class="err" id="e-${key}"></div>`:""}
   <div class="wrap"><table><thead><tr><th>Ad. No</th><th>Name</th><th>Class &amp; Div</th><th>Position</th>${admin?"<th></th>":""}</tr></thead><tbody>
   ${rows.length?rows.map((r,i)=>{
-    const pos=esc((posOf[String(r.ad).trim().toLowerCase()]||["—"]).join("; "));
+    const subPositions=posOf[String(r.ad).trim().toLowerCase()]||[];
+    const coreRolePositions=corePositions[String(r.name||"").trim().toLowerCase()]||[];
+    const allPositions=[...new Set([...subPositions,...coreRolePositions])];
+    const pos=esc(allPositions.length?allPositions.join("; "):"—");
     if(admin&&memEdit===i)return `<tr class="editrow"><td><input id="ea-${key}" value="${esc(r.ad)}" placeholder="Ad. No" aria-label="Ad. No"></td><td><input id="en-${key}" value="${esc(r.name)}" placeholder="Name" aria-label="Name"></td><td><input id="ec-${key}" value="${esc(r.club)}" placeholder="Class &amp; Div" aria-label="Class and Div"></td><td>${pos}</td><td><div class="act"><button class="edit" id="esave-${key}" type="button">Save</button><button class="alt" id="ecancel-${key}" type="button">Cancel</button></div><div class="err" id="ee-${key}"></div></td></tr>`;
     return `<tr><td>${esc(r.ad)}</td><td>${esc(r.name)}</td><td>${esc(r.club)}</td><td>${pos}</td>${admin?`<td><div class="act"><button class="edit" data-i="${i}" type="button">Edit</button><button class="del" data-i="${i}">Remove</button></div></td>`:""}</tr>`}).join(""):`<tr><td colspan="${admin?5:4}">No one added yet.${admin?" Add the first person above.":""}</td></tr>`}
   </tbody></table></div>`;
