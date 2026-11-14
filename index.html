@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://ltopqkvzkqfuvzhqhrys.supabase.co">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <title>WAFD MATES</title>
 <style>
@@ -215,7 +216,12 @@ h3{font-size:18px;margin:22px 0 10px}
 </main>
 
 <script>
-let role=null; // set after sign in
+const GATE_HASH="1800318463715d2640b8af85a442d38583cd4b05ac11c1669c7e6130a1bab69d", MEMBER_HASH="e31ab643c44f7a0ec824b59d1194d60dac334200d845e61d2d289daa0f087ea4";
+async function sha256(t){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+let loaded=false;
+function toast(t){let d=document.getElementById("toast");if(!d){d=document.createElement("div");d.id="toast";d.style.cssText="position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#17302a;color:#fff;padding:8px 16px;border-radius:20px;font-size:14px;z-index:99";document.body.appendChild(d)}d.textContent=t;d.style.display=t?"block":"none"}
+
+let role=null;
 const SB_URL="https://ltopqkvzkqfuvzhqhrys.supabase.co", SB_KEY="sb_publishable_e6MPC5_UZT7mFG4QnG4P8w_V6T2g_Vh";
 let PW="",TOKEN="",REFRESH="";
 const CLOUD=!!(SB_URL&&SB_KEY), SB_KEYS=["sub2","hubs","core","gallery","members","messages"];
@@ -228,7 +234,7 @@ async function rpc(name,args,retry=true){
   if((r.status===401||r.status===403)&&REFRESH&&retry){if(await refreshTok())return rpc(name,args,false)}
   if(!r.ok)throw new Error(r.status);
   const t=await r.text();return t?JSON.parse(t):null}
-function signOutClear(){role=null;PW="";TOKEN="";REFRESH="";subEdit=null;memEdit=null;coreEdit=null}
+function signOutClear(){role=null;PW="";TOKEN="";REFRESH="";subEdit=null;memEdit=null;coreEdit=null;loaded=false}
 const mem={};let curPage="home";
 function setSync(t){const e=document.getElementById("sync");if(e)e.textContent=t}
 const store={
@@ -237,6 +243,7 @@ const store={
     return [];
   },
   set(k,v){
+    if(!loaded){alert("Data is still loading. Please wait a moment.");return false}
     mem[k]=v;
     rpc("rpc_write",{p:PW,k:k,v:v}).catch(()=>alert("Could not save. Check your connection or sign in again."));
     return true;
@@ -244,12 +251,14 @@ const store={
 };
 async function syncCloud(rerender=true){
   if(!role)return;
+  toast("Loading data...");
   try{
     const rows=await rpc("rpc_read",{p:PW}),seen={};
     rows.forEach(x=>{seen[x.rkey]=1;mem[x.rkey]=x.rvalue});
     SB_KEYS.forEach(k=>{if(!seen[k])mem[k]=[]});
+    loaded=true;toast("");
     if(rerender)show(curPage);
-  }catch(e){}
+  }catch(e){toast("Could not load data. Check your connection.")}
 }
 
 
@@ -591,20 +600,22 @@ function loginView(key,box,title){
   btns.forEach(b=>b.onclick=()=>{pick=b.dataset.r;box.querySelector("#em-"+key).style.display=pick==="ADMIN"?"":"none";btns.forEach(x=>x.classList.toggle("on",x===b))});
   const go=async()=>{
     const v=box.querySelector("#pw-"+key).value,er=box.querySelector("#le-"+key);
-    er.textContent="Checking...";
-    try{
-      if(pick==="ADMIN"){
+    if(pick==="ADMIN"){
+      er.textContent="Signing in...";
+      try{
         const em=box.querySelector("#em-"+key).value.trim();
         const j=await authCall({email:em,password:v},"password");
         TOKEN=j.access_token;REFRESH=j.refresh_token;
-        if(await rpc("rpc_whoami",{})===true){role="ADMIN";PW="";await syncCloud(false);renderAny(key,box.id,title)}
+        if(await rpc("rpc_whoami",{})===true){role="ADMIN";PW="";renderAny(key,box.id,title);syncCloud()}
         else{TOKEN="";REFRESH="";er.textContent="This account is not an admin."}
-      }else{
-        const r=await rpc("rpc_login",{p:v});
-        if(r==="MEMBERS"){role="MEMBERS";PW=v;await syncCloud(false);renderAny(key,box.id,title)}
-        else er.textContent="Wrong password for MEMBERS. Try again.";
-      }
-    }catch(e){er.textContent=(pick==="ADMIN"&&/^(400|422)$/.test(e.message))?"Wrong email or password.":"Cannot reach the server. Try again."}
+      }catch(e){er.textContent=/^(400|422)$/.test(e.message)?"Wrong email or password.":"Cannot reach the server. Try again."}
+    }else{
+      if(await sha256(v)!==MEMBER_HASH){er.textContent="Wrong password for MEMBERS. Try again.";return}
+      er.textContent="";
+      role="MEMBERS";PW=v;
+      renderAny(key,box.id,title);
+      syncCloud();
+    }
   };
   box.querySelector("#go-"+key).onclick=go;
   box.querySelector("#pw-"+key).onkeydown=e=>{if(e.key==="Enter")go()};
@@ -616,15 +627,15 @@ try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}ca
 function unlock(){document.body.classList.remove("locked");document.getElementById("gate").style.display="none"}
 try{if(sessionStorage.getItem("wafdGate")==="1")unlock()}catch(e){}
 async function tryGate(){
-  const e=document.getElementById("gerr");e.textContent="Checking...";
-  try{
-    const r=await rpc("rpc_login",{p:document.getElementById("gpw").value});
-    if(r==="GATE"){try{sessionStorage.setItem("wafdGate","1")}catch(x){}e.textContent="";unlock()}
-    else e.textContent="Wrong password. Try again."
-  }catch(x){e.textContent="Cannot reach the server. Try again."}
+  const e=document.getElementById("gerr");
+  if(await sha256(document.getElementById("gpw").value)===GATE_HASH){
+    try{sessionStorage.setItem("wafdGate","1")}catch(x){}
+    e.textContent="";unlock();
+  }else e.textContent="Wrong password. Try again.";
 }
 document.getElementById("gbtn").onclick=tryGate;
 document.getElementById("gpw").onkeydown=e=>{if(e.key==="Enter")tryGate()};
+fetch(SB_URL+"/auth/v1/health",{headers:SBH}).catch(()=>{});
 show((location.hash||"#home").slice(1).replace(/[^a-z]/g,"")||"home");
 {const G={3:["01110","10001","00001","00110","00001","10001","01110"],9:["01110","10001","10001","01111","00001","10001","01110"]},host=document.querySelector(".num3d");
 ["3","9"].forEach((d,k)=>G[d].forEach((row,r)=>[...row].forEach((ch,q)=>{
