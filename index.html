@@ -63,10 +63,6 @@ body.locked header,body.locked main{display:none}
 .eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);padding:6px 8px;background:transparent;color:var(--mut);border-radius:6px;line-height:0}
 .eye svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .tagline{font:700 14px/1.4 "Trebuchet MS",sans-serif;letter-spacing:1.5px;color:var(--accent);margin:0 0 14px}
-.shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
-.shot{position:relative;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.shot img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
-.shot .del{position:absolute;top:8px;right:8px}
 .hub{background:var(--card);border:1px solid var(--line);border-left:6px solid var(--hot);border-radius:10px;margin:0 0 16px;overflow:hidden}
 .hub h3{margin:0;padding:12px 14px;font-size:19px}
 .hub table{border:0;border-radius:0}
@@ -184,7 +180,7 @@ h3{font-size:18px;margin:22px 0 10px}
 <header><div class="bar">
 <div class="logo" id="logoHome" role="link" tabindex="0" aria-label="Go to Home"><span>WAFD MATES</span></div>
 <nav id="nav">
-<a data-p="home">Home</a><a data-p="gallery">Gallery</a>
+<a data-p="home">Home</a>
 <a data-p="core">Core Committee</a><a data-p="sub">Sub-Committee</a><a data-p="members">Members</a><a data-p="message">Message</a>
 </nav></div></header>
 <main>
@@ -207,7 +203,6 @@ h3{font-size:18px;margin:22px 0 10px}
 
 
 <section class="page" id="message"><div id="msgBox"></div></section>
-<section class="page" id="gallery"><div id="galBox"></div></section>
 
 <section class="page" id="core"><div id="coreBox"></div></section>
 
@@ -224,7 +219,7 @@ function toast(t){let d=document.getElementById("toast");if(!d){d=document.creat
 let role=null;
 const SB_URL="https://ltopqkvzkqfuvzhqhrys.supabase.co", SB_KEY="sb_publishable_e6MPC5_UZT7mFG4QnG4P8w_V6T2g_Vh";
 let PW="",TOKEN="",REFRESH="";
-const CLOUD=!!(SB_URL&&SB_KEY), SB_KEYS=["sub2","hubs","core","gallery","members","messages"];
+const CLOUD=!!(SB_URL&&SB_KEY), SB_KEYS=["sub2","hubs","core","members","messages"];
 const SBH={apikey:SB_KEY,"Content-Type":"application/json"};
 async function authCall(body,grant){const r=await fetch(SB_URL+"/auth/v1/token?grant_type="+grant,{method:"POST",headers:SBH,body:JSON.stringify(body)});if(!r.ok)throw new Error(r.status);return r.json()}
 async function refreshTok(){try{const j=await authCall({refresh_token:REFRESH},"refresh_token");TOKEN=j.access_token;REFRESH=j.refresh_token;return true}catch(e){return false}}
@@ -293,7 +288,6 @@ function show(p){
   document.querySelectorAll(".page").forEach(e=>e.classList.toggle("on",e.id===p));
   document.querySelectorAll("nav a").forEach(a=>a.classList.toggle("on",a.dataset.p===p));
   if(p==="message")renderAny("message","msgBox","Message");
-  if(p==="gallery")renderAny("gallery","galBox","Gallery");
   if(p==="core")renderAny("core","coreBox","Core Committee");
   if(p==="sub")renderAny("sub","subBox","Sub-Committee");
   if(p==="members")render("members","memBox","Members");
@@ -306,10 +300,6 @@ function render(key,boxId,title){
   if(!role){loginView(key,box,title);return}
   const rows=store.get(key), admin=role==="ADMIN";
 
-  // Build each member's position from BOTH Sub-Committee and Core Committee.
-  // Club/board roles show only the club or board name. Hub chairman/convener
-  // roles keep their hub title. Core Committee roles are matched by name
-  // because existing Core Committee records do not contain admission numbers.
   const posOf={};
   store.get("sub2").forEach(x=>{
     const k=String(x.ad||"").trim().toLowerCase();
@@ -362,11 +352,11 @@ function render(key,boxId,title){
     };
   }
 }
-let memEdit=null; // index of the Members row being edited, or null
+let memEdit=null;
 
-function renderAny(key,boxId,title){key==="message"?renderMessage(boxId,title):key==="core"?renderCore(boxId,title):key==="gallery"?renderGallery(boxId,title):key==="sub"?renderSub(boxId,title):render(key,boxId,title)}
+function renderAny(key,boxId,title){key==="message"?renderMessage(boxId,title):key==="core"?renderCore(boxId,title):key==="sub"?renderSub(boxId,title):render(key,boxId,title)}
 
-let coreEdit=null; // index of the Core Committee card being edited, or null
+let coreEdit=null;
 function renderCore(boxId,title){
   const box=document.getElementById(boxId);
   if(!role){loginView("core",box,title);return}
@@ -409,27 +399,6 @@ function renderCore(boxId,title){
   };
 }
 
-function renderGallery(boxId,title){
-  const box=document.getElementById(boxId);
-  if(!role){loginView("gallery",box,title);return}
-  const rows=store.get("gallery"), admin=role==="ADMIN";
-  box.innerHTML=`<div class="top"><h2>${title}</h2><div><span class="tag">${admin?"Admin":"Member"}</span> <button class="alt" id="out-gal">Sign out</button></div></div>
-  ${admin?`<div class="form"><input id="f-gal" type="file" accept="image/*" multiple aria-label="Photos"><button id="add-gal">Add photos</button></div><div class="err" id="e-gal"></div>`:""}
-  <div class="shots">${rows.length?rows.map((r,i)=>`<div class="shot"><img src="${r}" alt="Gallery photo ${i+1}" loading="lazy">${admin?`<button class="del" data-i="${i}">Remove</button>`:""}</div>`).join(""):`<p>No photos yet.${admin?" Add the first photos above.":""}</p>`}</div>`;
-  box.querySelector("#out-gal").onclick=()=>{signOutClear();renderGallery(boxId,title)};
-  if(!admin)return;
-  box.querySelectorAll(".del").forEach(b=>tapConfirm(b,()=>{const l=store.get("gallery");l.splice(+b.dataset.i,1);store.set("gallery",l);renderGallery(boxId,title)}));
-  box.querySelector("#add-gal").onclick=async()=>{
-    const files=[...box.querySelector("#f-gal").files],err=box.querySelector("#e-gal");
-    if(!files.length){err.textContent="Choose one or more photos first.";return}
-    const l=store.get("gallery");
-    for(const f of files){
-      try{l.push(await shrink(f,800))}catch(e){err.textContent="Skipped a file that is not a valid image."}
-    }
-    if(!store.set("gallery",l)){err.textContent="Storage is full. Remove some photos and try again.";return}
-    renderGallery(boxId,title);
-  };
-}
 function shrink(f,max){return new Promise((ok,no)=>{
   const rd=new FileReader();
   rd.onerror=no;
@@ -444,15 +413,13 @@ function maxClubs(h){return HUB_MAX[h]||MAX_CLUBS}
 function getHubs(){const h=store.get("hubs");return h.length?h:DEFAULT_HUBS.slice()}
 function isClubRole(pos){return pos==="CLUB_CHAIRMAN"||pos==="CLUB_CONVENER"||pos==="CLUB_MEMBER"}
 function clubRoleLabel(pos){return pos==="CLUB_CHAIRMAN"?"CHAIRMAN OF THE CLUB":pos==="CLUB_CONVENER"?"CONVENER OF THE CLUB":"CLUB MEMBER"}
-let subEdit=null; // index (in "sub2") of the row being edited, or null
+let subEdit=null;
 function renderSub(boxId,title){
   const box=document.getElementById(boxId);
   if(!role){loginView("sub",box,title);return}
   let rows=store.get("sub2");
   const admin=role==="ADMIN", hubs=getHubs();
 
-  // Convert old MEMBER entries: first person in each club becomes Chairman,
-  // second person becomes Convener. Existing names and admission numbers remain unchanged.
   let migrated=false;
   const oldClubCounts={};
   rows.forEach(r=>{
