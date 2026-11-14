@@ -236,6 +236,11 @@ async function rpc(name,args,retry=true){
   const t=await r.text();return t?JSON.parse(t):null}
 function signOutClear(){role=null;PW="";TOKEN="";REFRESH="";subEdit=null;memEdit=null;coreEdit=null;loaded=false}
 const mem={};let curPage="home";
+const IDBN="wafd_cache";
+function idb(){return new Promise((ok,no)=>{try{const r=indexedDB.open(IDBN,1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)}catch(e){no(e)}})}
+async function cacheGet(){try{const d=await idb();return await new Promise(ok=>{const q=d.transaction("kv").objectStore("kv").get("mem");q.onsuccess=()=>ok(q.result||null);q.onerror=()=>ok(null)})}catch(e){return null}}
+async function cacheSet(v){try{const d=await idb();d.transaction("kv","readwrite").objectStore("kv").put(v,"mem")}catch(e){}}
+cacheGet().then(d=>{if(d&&!Object.keys(mem).length)Object.assign(mem,d)});
 function setSync(t){const e=document.getElementById("sync");if(e)e.textContent=t}
 const store={
   get(k){
@@ -251,12 +256,12 @@ const store={
 };
 async function syncCloud(rerender=true){
   if(!role)return;
-  toast("Loading data...");
+  toast(Object.keys(mem).length?"Updating...":"Loading data...");
   try{
     const rows=await rpc("rpc_read",{p:PW}),seen={};
     rows.forEach(x=>{seen[x.rkey]=1;mem[x.rkey]=x.rvalue});
     SB_KEYS.forEach(k=>{if(!seen[k])mem[k]=[]});
-    loaded=true;toast("");
+    loaded=true;toast("");cacheSet(JSON.parse(JSON.stringify(mem)));
     if(rerender)show(curPage);
   }catch(e){toast("Could not load data. Check your connection.")}
 }
