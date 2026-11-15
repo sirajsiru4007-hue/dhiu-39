@@ -199,6 +199,48 @@ nav a.on,nav a:hover{background:#f5f8f6;color:#17302a}
   nav a{font-size:12px;padding:6px 8px}
 }
 
+
+
+/* ---- Dark textured first-screen theme ---- */
+#gate{
+  background:
+    linear-gradient(135deg,rgba(0,0,0,.42),rgba(0,0,0,.58)),
+    url("WAFD-MATES-dark-texture.jpg") center center / cover no-repeat !important;
+  background-color:#080808 !important;
+}
+#gate .box.glass{
+  background:linear-gradient(145deg,rgba(35,35,35,.88),rgba(8,8,8,.82)) !important;
+  -webkit-backdrop-filter:blur(20px) saturate(1.15) !important;
+  backdrop-filter:blur(20px) saturate(1.15) !important;
+  border:1px solid rgba(255,255,255,.24) !important;
+  border-radius:24px !important;
+  box-shadow:0 24px 70px rgba(0,0,0,.62),inset 0 1px 0 rgba(255,255,255,.16) !important;
+  color:#fff !important;
+}
+#gate .signin{color:#fff !important;text-shadow:0 2px 12px rgba(0,0,0,.65) !important}
+#gate .small{color:rgba(255,255,255,.72) !important}
+#gate .gatelogo{filter:none !important;mix-blend-mode:normal !important}
+#gate input{
+  background:rgba(0,0,0,.48) !important;
+  color:#fff !important;
+  border:1px solid rgba(255,255,255,.25) !important;
+  border-radius:12px !important;
+}
+#gate input::placeholder{color:rgba(255,255,255,.55) !important}
+#gate input:focus{border-color:rgba(255,255,255,.72) !important;outline:none !important}
+#gate .eye{color:rgba(255,255,255,.78) !important}
+#gate .err{color:#ffb4a8 !important}
+#gate button:not(.eye){
+  background:linear-gradient(135deg,#444,#191919) !important;
+  color:#fff !important;
+  border:1px solid rgba(255,255,255,.3) !important;
+  box-shadow:0 8px 22px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.12) !important;
+}
+#gate button.alt{background:rgba(255,255,255,.08) !important;color:#fff !important}
+#gate button:not(.eye):hover{background:linear-gradient(135deg,#555,#242424) !important}
+#gate button.on{outline:2px solid rgba(255,255,255,.82) !important;outline-offset:2px}
+@media(max-width:480px){#gate .box{padding:22px 18px !important}}
+
 </style>
 </head>
 <body class="locked">
