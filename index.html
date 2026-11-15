@@ -171,10 +171,16 @@ h3{font-size:18px;margin:22px 0 10px}
 .subh{font:700 20px/1.6 "Plus Jakarta Sans","Trebuchet MS",sans-serif;letter-spacing:.14em;word-spacing:.35em;color:#3d514b}
 .logo{cursor:pointer}
 .logo:focus-visible span{outline:3px solid var(--hot);outline-offset:2px}
+/* ---- Reply feature ---- */
+.msg .head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+button.reply{padding:4px 14px;background:var(--hot);color:#1d2a2a;flex:0 0 auto}
+.msg .quote{margin:8px 0 0;padding:6px 10px;border-left:3px solid var(--line);background:var(--bg);color:var(--mut);font-size:14px;border-radius:4px;white-space:pre-wrap;word-break:break-word}
+.msg .to{margin-top:6px;font-size:14px;color:var(--accent)}
+.replybox{margin-top:10px}
 </style>
 </head>
 <body class="locked">
-<div id="gate"><div class="box glass"><img class="gatelogo" src="data:image/jpeg;base64,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" alt="WAFD MATES logo"><h2 class="signin">SIGN IN</h2><p class="small">Enter the password to open the site.</p>
+<div id="gate"><div class="box glass"><img class="gatelogo" src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBAUEBAYFBQUGBgYHCQ4JCQgICRINDQoOFRIWFhUSFBQXGiEcFxgfGRQUHScdHyIjJSUlFhwpLCgkKyEkJST/2wBDAQYGBgkICREJCREkGBQYJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCT/wAARCAGkAMQDASIAAhEBAxEB/8QAHAABAAICAwEAAAAAAAAAAAAAAAcIBQYBAwQC/8QAUBAAAQMDAgMEBgYHCQ4JCQgICRINDQoOFRIWFhUSFBQXGiEcFxgfGRQUHScdHyIjJSUlFhwpLCgkKyEkJST/2wBDAQYGBgkICREJCREkGBQYJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCT/wAARCAGkAMQDASIAAhEBAxEB/8QAHAABAAICAwEAAAAAAAAAAAAAAAcIBQYBAwQC/8QAUBAAAQMDAgMEBgYH" alt="WAFD MATES logo"><h2 class="signin">SIGN IN</h2><p class="small">Enter the password to open the site.</p>
 <input id="gpw" type="password" autocomplete="off" placeholder="Enter Password" aria-label="Password">
 <div class="err" id="gerr"></div><div class="row"><button id="gbtn">Open site</button></div></div></div>
 <header><div class="bar">
@@ -525,28 +531,50 @@ function renderSub(boxId,title){
 }
 
 async function appendShared(k,item){try{await rpc("rpc_send",{p:PW,item:item});await syncCloud(false);return true}catch(e){return false}}
-let msgTab="reach";
+let msgTab="reach",replyIdx=null;
 function renderMessage(boxId,title){
   const box=document.getElementById(boxId);
   if(!role){loginView("message",box,title);return}
   const admin=role==="ADMIN",all=store.get("messages").map((m,i)=>({...m,i}));
-  const card=(m,del)=>`<div class="msg"><b>${esc(m.name||"Unknown")}</b> <span class="tag">${esc(m.by||"Member")}</span> <span class="when">${esc(new Date(m.t).toLocaleString())}</span><p>${esc(m.text)}</p>${del?`<button class="del" data-i="${m.i}">Delete</button>`:""}</div>`;
-  const list=(rows,del,empty)=>rows.length?rows.map(m=>card(m,del)).join(""):`<p>${empty}</p>`;
+  const card=(m,del,canReply)=>`<div class="msg">
+    <div class="head"><div><b>${esc(m.name||"Unknown")}</b> <span class="tag">${esc(m.by||"Member")}</span> <span class="when">${esc(new Date(m.t).toLocaleString())}</span></div>
+    ${canReply?`<button class="reply" data-r="${m.i}" type="button">Reply</button>`:""}</div>
+    ${m.to?`<div class="to">Reply to <b>${esc(m.to)}</b></div>`:""}
+    ${m.re?`<div class="quote">${esc(m.re)}</div>`:""}
+    <p>${esc(m.text)}</p>
+    ${canReply&&replyIdx===m.i?`<div class="replybox"><textarea id="rtext" placeholder="Write your reply to ${esc(m.name||"member")}" maxlength="1000" aria-label="Reply"></textarea><div class="err" id="rerr"></div><div class="row"><button id="rsend" type="button">Send reply</button><button class="alt" id="rcancel" type="button">Cancel</button></div></div>`:""}
+    ${del?`<button class="del" data-i="${m.i}">Delete</button>`:""}</div>`;
+  const list=(rows,del,empty,canReply)=>rows.length?rows.map(m=>card(m,del,canReply)).join(""):`<p>${empty}</p>`;
   const compose=nm=>`<div class="box">${nm?'<input id="mname" placeholder="Your name" maxlength="60" aria-label="Your name">':""}<textarea id="mtext" placeholder="Write your message" maxlength="1000" aria-label="Message"></textarea><div class="err" id="merr"></div><div class="row"><button id="msend" type="button">Send message</button></div></div>`;
   const fromAdmin=all.filter(m=>m.by==="Admin").reverse();
   let body;
   if(admin){
     const inbox=all.filter(m=>m.by!=="Admin").reverse();
     const tabs=`<div class="row"><button class="alt ${msgTab==="reach"?"on":""}" data-tab="reach">Reach message${inbox.length?` <span class="badge">${inbox.length}</span>`:""}</button><button class="alt ${msgTab==="sent"?"on":""}" data-tab="sent">Sent message</button></div>`;
-    body=tabs+(msgTab==="reach"?list(inbox,true,"No messages yet."):compose(false)+(fromAdmin.length?`<h3>Sent messages</h3>`+list(fromAdmin,true,""):""));
+    body=tabs+(msgTab==="reach"?list(inbox,true,"No messages yet.",true):compose(false)+(fromAdmin.length?`<h3>Sent messages</h3>`+list(fromAdmin,true,"",false):""));
   }else{
-    body=`<p class="small2">Your message goes to the admin only.</p>`+compose(true)+(fromAdmin.length?`<h3>Messages from admin</h3>`+list(fromAdmin,false,""):"");
+    body=`<p class="small2">Your message goes to the admin only.</p>`+compose(true)+(fromAdmin.length?`<h3>Messages from admin</h3>`+list(fromAdmin,false,"",false):"");
   }
   box.innerHTML=`<div class="top"><h2>Message</h2><div><span class="tag">${admin?"Admin":"Member"}</span> <button class="alt" id="ref-msg">Refresh</button> <button class="alt" id="out-msg">Sign out</button></div></div>`+body;
-  box.querySelector("#out-msg").onclick=()=>{signOutClear();renderMessage(boxId,title)};
+  box.querySelector("#out-msg").onclick=()=>{signOutClear();replyIdx=null;renderMessage(boxId,title)};
   box.querySelector("#ref-msg").onclick=()=>syncCloud();
-  box.querySelectorAll("[data-tab]").forEach(t=>t.onclick=()=>{msgTab=t.dataset.tab;renderMessage(boxId,title)});
-  box.querySelectorAll(".del").forEach(b=>tapConfirm(b,()=>{const l=store.get("messages");l.splice(+b.dataset.i,1);store.set("messages",l);renderMessage(boxId,title)}));
+  box.querySelectorAll("[data-tab]").forEach(t=>t.onclick=()=>{msgTab=t.dataset.tab;replyIdx=null;renderMessage(boxId,title)});
+  box.querySelectorAll(".del").forEach(b=>tapConfirm(b,()=>{const l=store.get("messages");l.splice(+b.dataset.i,1);store.set("messages",l);replyIdx=null;renderMessage(boxId,title)}));
+
+  // Reply button
+  box.querySelectorAll("button.reply").forEach(b=>b.onclick=()=>{replyIdx=+b.dataset.r;renderMessage(boxId,title);const t=box.querySelector("#rtext");if(t)t.focus()});
+  const rc=box.querySelector("#rcancel");if(rc)rc.onclick=()=>{replyIdx=null;renderMessage(boxId,title)};
+  const rs=box.querySelector("#rsend");
+  if(rs)rs.onclick=async()=>{
+    const orig=store.get("messages")[replyIdx],e=box.querySelector("#rerr"),t=box.querySelector("#rtext").value.trim();
+    if(!orig){replyIdx=null;renderMessage(boxId,title);return}
+    if(!t){e.textContent="Write a reply first.";return}
+    rs.disabled=true;e.textContent="";
+    const ok=await appendShared("messages",{name:"Admin",text:t,by:"Admin",to:orig.name||"Member",re:String(orig.text||"").slice(0,200),t:Date.now()});
+    if(!ok){rs.disabled=false;e.textContent="Could not send. Try again.";return}
+    replyIdx=null;msgTab="sent";renderMessage(boxId,title);
+  };
+
   const send=box.querySelector("#msend");
   if(send)send.onclick=async()=>{
     const e=box.querySelector("#merr"),nm=box.querySelector("#mname"),n=nm?nm.value.trim():"Admin",t=box.querySelector("#mtext").value.trim();
