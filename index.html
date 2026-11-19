@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://ltopqkvzkqfuvzhqhrys.supabase.co">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>WAFD MATES</title></title>
+<title>FAMILY BOOK</title>
 <style>
 :root{--bg:#eef5f1;--ink:#12302a;--mut:#54706a;--card:#ffffff;--line:#cfdcd5;--accent:#0f6b5c;--hot:#e0a100;--onacc:#ffffff}
 *{box-sizing:border-box}
@@ -312,6 +312,32 @@ header.liquid-header{
 @media(prefers-reduced-motion:reduce){
   .liquid-nav .liquid-item{transition:none}
 }
+
+
+/* ---- Navbar turns transparent glass when the page is scrolled down ---- */
+header.liquid-header{transition:padding .35s ease}
+.liquid-bar{transition:background .35s ease,border-color .35s ease,box-shadow .35s ease,-webkit-backdrop-filter .35s ease,backdrop-filter .35s ease}
+header.liquid-header.scrolled{padding-top:12px;padding-bottom:6px}
+header.liquid-header.scrolled .liquid-bar{
+  background:linear-gradient(135deg,rgba(255,255,255,.28),rgba(255,255,255,.08))!important;
+  border-color:rgba(255,255,255,.45);
+  box-shadow:0 10px 30px rgba(35,75,105,.12),
+             inset 0 1px 1px rgba(255,255,255,.7),
+             inset 0 -1px 1px rgba(255,255,255,.2)!important;
+  -webkit-backdrop-filter:blur(22px) saturate(1.9);
+  backdrop-filter:blur(22px) saturate(1.9);
+}
+header.liquid-header.scrolled .liquid-nav .liquid-item{color:#17283d!important;text-shadow:0 1px 6px rgba(255,255,255,.55)}
+header.liquid-header.scrolled .liquid-nav .liquid-item:hover{background:rgba(255,255,255,.35)!important}
+header.liquid-header.scrolled .liquid-nav .liquid-item.on{
+  background:linear-gradient(135deg,rgba(255,255,255,.7),rgba(235,247,255,.45))!important;
+  border-color:rgba(255,255,255,.7);
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  header.liquid-header.scrolled .liquid-bar{background:rgba(245,251,255,.82)!important}
+}
+@media(max-width:760px){header.liquid-header.scrolled{padding-top:8px;padding-bottom:4px}}
+@media(prefers-reduced-motion:reduce){header.liquid-header,.liquid-bar{transition:none}}
 
 </style>
 </head>
@@ -797,6 +823,15 @@ document.getElementById("respBtn").onclick=()=>show("message");
 (()=>{const h=document.querySelector(".mainh");let tm;h.addEventListener("touchstart",()=>{h.classList.add("glow");clearTimeout(tm);tm=setTimeout(()=>h.classList.remove("glow"),1500)},{passive:true})})();
 {const L=document.getElementById("logoHome");L.onclick=()=>show("home");L.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();show("home")}}}
 show(curPage);
+// Navbar: switch to transparent glass once the page is scrolled down
+(()=>{
+  const hd=document.querySelector("header.liquid-header");
+  if(!hd)return;
+  let ticking=false;
+  const update=()=>{hd.classList.toggle("scrolled",(window.scrollY||document.documentElement.scrollTop)>24);ticking=false};
+  window.addEventListener("scroll",()=>{if(!ticking){ticking=true;requestAnimationFrame(update)}},{passive:true});
+  update();
+})();
 </script>
 </body>
 </html>
