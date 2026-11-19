@@ -350,82 +350,19 @@ header.liquid-header{
       <div class="err" id="gerr"></div>
       <div class="row"><button id="gbtn">Open site</button></div>
   
-<div class="clock-card">
-  <div class="clock-label">LOCAL TIME</div>
-  <div id="liveClock" class="clock-time">00:00:00</div>
-  <div id="clockDate" class="clock-date"></div>
-  <div id="clockZone" class="clock-zone"></div>
-</div>
-
-<style>
-.clock-card {
-  width: 240px;
-  padding: 20px 14px;
-  background: #111;
-  color: white;
-  border: 1px solid #333;
-  border-radius: 14px;
-  text-align: center;
-  font-family: Arial, sans-serif;
-  box-sizing: border-box;
-}
-
-.clock-label {
-  font-size: 10px;
-  letter-spacing: 3px;
-  color: #999;
-  margin-bottom: 12px;
-}
-
-.clock-time {
-  font-size: 30px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.clock-date {
-  margin-top: 12px;
-  font-size: 12px;
-  color: #ccc;
-}
-
-.clock-zone {
-  margin-top: 5px;
-  font-size: 10px;
-  color: #888;
-}
-</style>
-
-<script>
-function updateClock() {
-  const now = new Date();
-
-  document.getElementById("liveClock").textContent =
-    now.toLocaleTimeString(undefined, {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false
-    });
-
-  document.getElementById("clockDate").textContent =
-    now.toLocaleDateString(undefined, {
-      weekday: "long",
-      day: "2-digit",
-      month: "long",
-      year: "numeric"
-    });
-
-  document.getElementById("clockZone").textContent =
-    Intl.DateTimeFormat().resolvedOptions().timeZone;
-}
-
-updateClock();
-setInterval(updateClock, 1000);
-</script>
-
+   </div>
+    <section class="box glass gate-timer" aria-label="Countdown timer">
+      <p class="timer-kicker">WAFD MATES</p>
+      <h2>COUNTDOWN</h2>
+      <div class="gate-date" id="gateTimerDate">DATE NOT SET</div>
+      <div class="timer-digits">
+        <div><strong id="gateHours">--</strong><span>HOUR</span></div>
+        <div><strong id="gateMinutes">--</strong><span>MINUTE</span></div>
+        <div><strong id="gateSeconds">--</strong><span>SECOND</span></div>
+      </div>
+      <p class="timer-note" id="gateTimerNote">The admin can set the timer.</p>
+    </section>
+  </div>
 </div>
 <header class="liquid-header">
   <div class="bar liquid-bar">
