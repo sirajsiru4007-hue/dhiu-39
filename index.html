@@ -351,6 +351,20 @@ header.liquid-header{
       <div class="row"><button id="gbtn">Open site</button></div>
   
    
+</div>
+    <section class="box glass gate-timer" aria-label="Countdown timer">
+      <p class="timer-kicker">WAFD MATES</p>
+      <h2>COUNTDOWN</h2>
+      <div class="gate-date" id="gateTimerDate">DATE NOT SET</div>
+      <div class="timer-digits">
+        <div><strong id="gateHours">--</strong><span>HOUR</span></div>
+        <div><strong id="gateMinutes">--</strong><span>MINUTE</span></div>
+        <div><strong id="gateSeconds">--</strong><span>SECOND</span></div>
+      </div>
+      <p class="timer-note" id="gateTimerNote">The admin can set the timer.</p>
+    </section>
+  </div>
+   
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -416,34 +430,33 @@ body {
     <div class="digit">0</div>
     <div class="digit">9</div>
 </div>
+<header class="liquid-header">
+  <div class="bar liquid-bar">
+    <div id="logoHome" role="link" tabindex="0" aria-label="Go to Home" style="display:none"></div>
+    <nav id="nav" class="liquid-nav" aria-label="Main navigation">
+      <a class="liquid-item" data-p="home" href="#home" aria-label="Home">
+        <span class="liquid-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3.5 11.2 12 4l8.5 7.2M6 9.6V20h12V9.6M10 20v-5h4v5"/></svg></span><span>HOME</span>
+      </a>
+      <a class="liquid-item" data-p="core" href="#core" aria-label="Core Committee">
+        <span class="liquid-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.6 2.4 2.6 14.6 0 17M12 3.5c-2.6 2.4-2.6 14.6 0 17"/></svg></span><span>CORE COMMITTEE</span>
+      </a>
+      <a class="liquid-item" data-p="sub" href="#sub" aria-label="Sub-Committee">
+        <span class="liquid-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5.5h16v13H4zM8 9h8M8 12h8M8 15h5"/></svg></span><span>SUB-COMMITTEE</span>
+      </a>
+      <a class="liquid-item" data-p="members" href="#members" aria-label="Members">
+        <span class="liquid-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.8 20c.8-3.2 3-4.8 6.2-4.8s5.4 1.6 6.2 4.8M16 5.2a3 3 0 0 1 0 5.7M17 15.5c2.2.5 3.5 2 4.2 4.5"/></svg></span><span>MEMBERS</span>
+      </a>
+      <a class="liquid-item" data-p="message" href="#message" aria-label="Messages">
+        <span class="liquid-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5.5h16v11H9l-5 3zM8 9h8M8 12.5h5"/></svg></span><span>MESSAGES</span>
+      </a>
+    </nav>
+  </div>
+</header>
+<main>
 
 </body>
 </html>
 
-
-<section class="page" id="home"><div class="hero"><div class="herogrid">
-<div class="herotext">
-<div class="titlerow"><h1 class="mainh">WAFD<br><span class="grn">MATES</span></h1><div class="stage" role="img" aria-label="3D model: 39th batch"><div class="tilt"><div class="num3d"></div></div><div class="shade"></div></div></div>
-<p class="subh">WHOLE HEARTED ACTIVE FRIENDS FOR DA’WA</p>
-<div class="about">
-<p>WAFD MATES is the name of the 39th batch of Darul Huda Islamic University (DHIU).</p>
-<p>The batch consists of 45 students guided by two respected teachers:</p>
-<ol><li>Vajeeh Hudawi Usthad</li><li>Shahin Ali Hudawi Usthad</li></ol>
-</div>
-<button class="cta" id="respBtn" type="button">SENT THE RESPONES</button>
-</div>
-
-</div></div></section>
-
-
-
-<section class="page" id="message"><div id="msgBox"></div></section>
-
-<section class="page" id="core"><div id="coreBox"></div></section>
-
-<section class="page" id="sub"><div id="subBox"></div></section>
-<section class="page" id="members"><div id="memBox"></div></section>
-</main>
 
 <script>
 const GATE_HASH="1800318463715d2640b8af85a442d38583cd4b05ac11c1669c7e6130a1bab69d", MEMBER_HASH="e31ab643c44f7a0ec824b59d1194d60dac334200d845e61d2d289daa0f087ea4";
